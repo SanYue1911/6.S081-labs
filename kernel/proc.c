@@ -34,12 +34,12 @@ procinit(void)
       // Allocate a page for the process's kernel stack.
       // Map it high in memory, followed by an invalid
       // guard page.
-      //char *pa = kalloc();
-      //if(pa == 0)
-      //  panic("kalloc");
-      //uint64 va = KSTACK((int) (p - proc));
-      //kvmmap(va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
-      //p->kstack = va;
+      /*char *pa = kalloc();
+      if(pa == 0)
+        panic("kalloc");
+      uint64 va = KSTACK((int) (p - proc));
+      kvmmap(va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+      p->kstack = va;*/
   }
   //kvminithart();
 }
@@ -113,13 +113,6 @@ found:
     return 0;
   }
 
-  // An empty user page table.
-  p->pagetable = proc_pagetable(p);
-  if(p->pagetable == 0){
-    freeproc(p);
-    release(&p->lock);
-    return 0;
-  }
   //kernel pagetable.
   p->kpagetable = kvminit_proc();
   //procinit申请映射功能
@@ -127,9 +120,16 @@ found:
   if(pa == 0)
     panic("kalloc");
   uint64 va = KSTACK((int) (p - proc));
-  kvmmap(va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+  mappages(p->kpagetable, va, PGSIZE, (uint64)pa, PTE_R | PTE_W);
   p->kstack = va;
 
+  // An empty user page table.
+  p->pagetable = proc_pagetable(p);
+  if(p->pagetable == 0){
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
 
   // Set up new context to start executing at forkret,
   // which returns to user space.
@@ -151,6 +151,8 @@ freeproc(struct proc *p)
   p->trapframe = 0;
   if(p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
+  if(p->kpagetable)
+    proc_freekpagetable(p->kpagetable, p->kstack, p->sz);
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -485,7 +487,6 @@ scheduler(void)
         c->proc = p;
         w_satp(MAKE_SATP(p->kpagetable));
         sfence_vma();
-
         swtch(&c->context, &p->context);
         kvminithart();
 
