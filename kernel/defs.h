@@ -174,6 +174,7 @@ uint64          uvmdealloc(pagetable_t, uint64, uint64);
 void            vmprint(pagetable_t);
 pagetable_t     kvminit_proc();
 void            proc_freekpagetable(pagetable_t kpagetable, uint64 kstack, uint64 sz);
+void            vmcopypage(pagetable_t pagetable, pagetable_t kpagetable, uint64 start, uint64 sz);
 pte_t *         walk(pagetable_t pagetable, uint64 va, int alloc);
 #ifdef SOL_COW
 #else

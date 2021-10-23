@@ -16,6 +16,16 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+void
+vmcopypage(pagetable_t pagetable, pagetable_t kpagetable, uint64 start, uint64 sz) {
+  for (uint64 i = start; i < start+sz; i += PGSIZE){
+    pte_t *pte = walk(pagetable, i, 0);
+    pte_t *kernelpte = walk(kpagetable, i, 1);
+    *kernelpte = (*pte) & ~(PTE_U|PTE_W|PTE_X);
+  }
+}
+
+
 pagetable_t
 kvminit_proc()
 {

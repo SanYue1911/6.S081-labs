@@ -43,7 +43,7 @@ sys_sbrk(void)
 {
   int addr;
   int n;
-  pte_t *pte, *kernelpte;
+
   struct proc *p = myproc();
 
   if(argint(0, &n) < 0)
@@ -56,9 +56,7 @@ sys_sbrk(void)
 
   if(n>0){
     for(int i = addr;i < addr + n; i +=PGSIZE){
-      pte = walk(p->pagetable, i, 0);
-      kernelpte = walk(p->kpagetable, i, 1);
-      *kernelpte = (*pte) & ~PTE_U;
+      vmcopypage(p->pagetable, p->kpagetable, addr, n);
     }
   }else{
     for(int i = addr - PGSIZE; i >= addr + n; i -=PGSIZE){

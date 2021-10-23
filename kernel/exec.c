@@ -20,7 +20,6 @@ exec(char *path, char **argv)
   struct proghdr ph;
   pagetable_t pagetable = 0, oldpagetable;
   struct proc *p = myproc();
-  pte_t *pte, *kernelpte; 
   begin_op();
 
   if((ip = namei(path)) == 0){
@@ -57,8 +56,6 @@ exec(char *path, char **argv)
     if(ph.vaddr % PGSIZE != 0)
       goto bad;
     if(loadseg(pagetable, ph.vaddr, ip, ph.off, ph.filesz) < 0)
-      goto bad;
-    if(sz1 >= PLIC)
       goto bad;
   }
   iunlockput(ip);
@@ -102,12 +99,8 @@ exec(char *path, char **argv)
     goto bad;
   
   uvmunmap(p->kpagetable, 0, PGROUNDUP(oldsz)/PGSIZE, 0);
-  for(int j=0; j<sz; j+=PGSIZE)
-  {
-    pte = walk(pagetable, j, 0);
-    kernelpte = walk(p->kpagetable, j, 1);
-    *kernelpte = (*pte) &~PTE_U;
-  }
+  vmcopypage(pagetable, p->kpagetable, 0, sz);
+
   // arguments to user main(argc, argv)
   // argc is returned via the system call return
   // value, which goes in a0.
