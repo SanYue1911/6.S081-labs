@@ -149,10 +149,12 @@ freeproc(struct proc *p)
   if(p->trapframe)
     kfree((void*)p->trapframe);
   p->trapframe = 0;
-  if(p->pagetable)
-    proc_freepagetable(p->pagetable, p->sz);
+    
   if(p->kpagetable)
     proc_freekpagetable(p->kpagetable, p->kstack, p->sz);
+  p->kpagetable = 0;
+  if(p->pagetable)
+    proc_freepagetable(p->pagetable, p->sz);
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -224,7 +226,7 @@ void
 userinit(void)
 {
   struct proc *p;
-
+  pte_t *pte, *kernelpte;
   p = allocproc();
   initproc = p;
   
@@ -232,6 +234,10 @@ userinit(void)
   // and data into it.
   uvminit(p->pagetable, initcode, sizeof(initcode));
   p->sz = PGSIZE;
+
+  pte = walk(p->pagetable, 0, 0);
+  kernelpte = walk(p->kpagetable, 0, 1);
+  *kernelpte = (*pte) & ~PTE_U;
 
   // prepare for the very first "return" from kernel to user.
   p->trapframe->epc = 0;      // user program counter
@@ -273,7 +279,7 @@ fork(void)
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
-
+  pte_t *pte, *kernelpte;
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
@@ -285,6 +291,13 @@ fork(void)
     release(&np->lock);
     return -1;
   }
+  for (int i = 0; i < p->sz; i += PGSIZE)
+  {
+    pte = walk(np->pagetable, i, 0);
+    kernelpte = walk(np->kpagetable, i, 0);
+    *kernelpte = (*pte) & ~PTE_U;
+  }
+
   np->sz = p->sz;
 
   np->parent = p;
