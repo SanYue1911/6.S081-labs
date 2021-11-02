@@ -8,6 +8,26 @@
 #include "proc.h"
 
 uint64
+sys_sigalarm(void)
+{
+  struct proc *p = myproc();
+  uint64 handler;
+  int n;
+  argint(0, &n);
+  p->interval = n;
+  argaddr(1, &handler);
+  p->handler = (void(*)())handler;
+  return 0;
+}
+
+uint64
+sys_sigreturn(void)
+{
+  return 0;
+}
+
+
+uint64
 sys_exit(void)
 {
   int n;
@@ -84,6 +104,7 @@ sys_sleep(void)
     sleep(&ticks, &tickslock);
   }
   release(&tickslock);
+  backtrace();
   return 0;
 }
 
