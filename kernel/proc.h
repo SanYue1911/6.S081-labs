@@ -108,4 +108,6 @@ struct proc {
   uint64 interval;             // alarm interval
   void (*handle)();            // alarm handle
   uint64 spend;                // spend time
+  struct trapframe *trapframeSave;
+  int waitReturn;
 };

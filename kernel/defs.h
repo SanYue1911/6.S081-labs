@@ -8,6 +8,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct trapframe;
 #ifdef LAB_NET
 struct mbuf;
 struct sock;
@@ -154,6 +155,7 @@ void            trapinit(void);
 void            trapinithart(void);
 extern struct spinlock tickslock;
 void            usertrapret(void);
+void            switchTrapframe(struct trapframe*, struct trapframe*);
 
 // uart.c
 void            uartinit(void);
