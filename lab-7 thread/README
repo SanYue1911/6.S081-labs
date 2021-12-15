@@ -1,3 +1,18 @@
+1、Uthread: switching between threads
+
+这道练习实现了一个简单的线程和调度器，但是缺少了寄存器相关的代码。
+uthread中定义context类型用于保存寄存器，之后thread_creat（）中定义context中的ra、sp。
+uthread_switch.S中写入寄存器交换的代码，thread_switch并没有使用cpu的context，而是把上一个线程的context当作c->context使用。
+
+2、Using threads
+
+有missing的原因很简单，put_thread（）中加上lock即可。lock bucket没做，懒了。
+
+3、Barrier
+
+完成此练习需对条件变量函数了解，但是注意所有线程到达时需要将条件变量置零，同时把round++。
+
+
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
 but is implemented for a modern RISC-V multiprocessor using ANSI C.
