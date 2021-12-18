@@ -28,8 +28,11 @@ struct kmem kmemcpu[NCPU];
 void
 kinit()
 {
-  for(int i = 0; i < NCPU; i++)
-    initlock(&(kmemcpu[i].lock), "kmem");
+  char name[16];
+  for(int i = 0; i < NCPU; i++){
+    snprintf(name, 16, "mem %d", i);
+    initlock(&(kmemcpu[i].lock), name);
+  }
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -78,26 +81,22 @@ kalloc(void)
 
   push_off();
   int cid = cpuid();
-  acquire(&(kmemcpu[cid].lock));
   r = kmemcpu[cid].freelist;
-  int i = cid + 1;
-  if(r){
-    kmemcpu[cid].freelist = r->next;
-  }else{
-    for(int j = 0; j < NCPU - 1; j++){
-      i = (i+1) % NCPU;
-      if(kmemcpu[i].freelist){
-        acquire(&(kmemcpu[i].lock));
-        r = kmemcpu[i].freelist;
-        kmemcpu[i].freelist = r->next;
-        release(&(kmemcpu[i].lock));
-        break;
-      }
+  for(int j = 0; j < NCPU; j++, cid++){
+    cid = cid % NCPU;
+    acquire(&(kmemcpu[cid].lock));
+    if(kmemcpu[cid].freelist){   
+      r = kmemcpu[cid].freelist;
+      kmemcpu[cid].freelist = r->next;
+      release(&(kmemcpu[cid].lock));
+      break;
     }
+    release(&(kmemcpu[cid].lock));
   }
-  release(&(kmemcpu[cid].lock));
-  pop_off();
-  if(r)
+ 
+  if(r){
     memset((char*)r, 5, PGSIZE); // fill with junk
+  }
+  pop_off();
   return (void*)r;
 }
