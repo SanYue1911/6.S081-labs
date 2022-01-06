@@ -10,4 +10,4 @@ uthread_switch.S中写入寄存器交换的代码，thread_switch并没有使用
 
 3、Barrier
 
-完成此练习需对条件变量函数了解，但是注意所有线程到达时需要将条件变量置零，同时把round++。
+同样也很简单，完成此实验需对条件变量函数了解，在notxv6/barrier.c新增barrier(),但是注意所有线程到达时需要将条件变量置零，同时把round++。
